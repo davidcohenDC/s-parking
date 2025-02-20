@@ -22,6 +22,9 @@ S-Parking simulates a parking scenario in Carla by:
 - **State Machine Controller:** A parking controller processes sensor data and applies vehicle control commands to perform parking maneuvers.
 - **Modular Design:** The code is organized into clearly defined modules to facilitate maintenance and future enhancements.
 
+![S-Parking Demo](media/sparking_demo.gif)
+*Demo: S-Parking simulation showcasing the ego vehicle performing parking maneuvers in Carla Simulator v0.9.15.*
+
 ## Modules Overview
 
 - **Configuration (`src/config.py`):**  
