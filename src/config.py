@@ -97,7 +97,7 @@ CONFIG = {
     'sensor_tick': 0.0,
     'dropoff_general_rate': 0.1,
     'min_back_distance': 0.0,
-    'forward_min_distance': 1.2,
+    'forward_min_distance': 1.1,
     'lidar_range': 10.0,
     'lidar_rotation_frequency': 50,
     'lidar_channels': 64,

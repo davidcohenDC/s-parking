@@ -173,7 +173,24 @@ class ParkingController:
         """
         Move forward to finalize parking.
         """
-        self.vehicle_control.forward_straight()
+
+        # Determine yaw error (desired yaw = 0°)
+        current_yaw = self.ego_vehicle.get_transform().rotation.yaw
+        yaw_error = current_yaw  # error with respect to 0°
+        yaw_threshold = 5.0  # degrees tolerance
+
+        if abs(yaw_error) > yaw_threshold:
+            # Proportional correction (tuning gain as necessary)
+            correction = yaw_error / 60.0
+            logging.info(f"[ParkingController] Realigning: yaw_error={yaw_error:.2f}, correction={correction:.2f}")
+            self.vehicle_control.drive(
+                throttle=self.config['forward_throttle'],
+                steer=correction,
+                reverse=False
+            )
+        else:
+            self.vehicle_control.forward_straight()
+
         front_dist = self.lidars["front_center"].get_min_distance_front()
         if front_dist is not None and front_dist < self.forward_min_distance:
             logging.info(f"[ParkingController] Transition: Obstacle detected ahead ({front_dist:.2f} m) -> STOPPED")
