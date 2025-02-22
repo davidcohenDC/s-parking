@@ -3,7 +3,7 @@ import logging
 
 from config import CONFIG
 from scenario import SParkingScenario
-from src.controller.controller import ParkingController
+from controller.controller import ParkingController
 
 
 def run_simulation_run(sim_index: int, scenario: SParkingScenario, config: dict) -> None:

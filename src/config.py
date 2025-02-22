@@ -71,6 +71,7 @@ CONFIG = {
         carla.Rotation(pitch=0.0, yaw=0.0, roll=0.0)
     ),
 
+    'fps': 20,
 
     # -----------------------------------------------------------------------------
     # Parking Alignment Thresholds
@@ -92,12 +93,21 @@ CONFIG = {
     'arc2_length': 1.9,
 
     # -----------------------------------------------------------------------------
+    # Realigning Forward Straight
+    # -----------------------------------------------------------------------------
+    'desired_yaw': 180.0,
+    'yaw_threshold': 0.2,
+    'conversion_factor': 0.4,
+    'max_correction': 1.0,
+
+
+    # -----------------------------------------------------------------------------
     # Sensor Parameters
     # -----------------------------------------------------------------------------
     'sensor_tick': 0.0,
     'dropoff_general_rate': 0.1,
     'min_back_distance': 0.0,
-    'forward_min_distance': 1.1,
+    'forward_min_distance': 0.9,
     'lidar_range': 10.0,
     'lidar_rotation_frequency': 50,
     'lidar_channels': 64,
