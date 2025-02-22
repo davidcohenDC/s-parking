@@ -42,7 +42,7 @@ S-Parking simulates a parking scenario in Carla by:
 
 - **Sensors (`src/sensors/`):**  
   - **Lidar Sensor (`src/sensors/lidar_sensor.py`):**  
-    The `AdvancedLidarSensor` class processes LiDAR point clouds and provides distance query methods.
+    The `LidarSensorManager` class processes LiDAR point clouds and provides distance query methods.
   - **Collision Sensor (`src/sensors/collision_sensor.py`):**  
     The `CollisionSensorManager` manages collision detection.
 

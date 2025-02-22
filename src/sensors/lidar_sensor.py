@@ -6,7 +6,7 @@ import numpy as np
 
 from src.utils.distance import compute_2d_distance
 
-class AdvancedLidarSensor:
+class LidarSensorManager:
     """
     Wraps a LiDAR sensor and provides utility functions to process its point cloud.
     """
@@ -30,7 +30,7 @@ class AdvancedLidarSensor:
 
     def spawn(self) -> None:
         if not self.ego_vehicle:
-            raise ValueError(f"[AdvancedLidarSensor-{self.name}] ERROR: Ego vehicle is None.")
+            raise ValueError(f"[LidarSensorManager-{self.name}] ERROR: Ego vehicle is None.")
         lidar_bp = self.bp_lib.find('sensor.lidar.ray_cast')
         # Set sensor attributes from configuration
         lidar_bp.set_attribute('range', str(self.config['lidar_range']))
@@ -42,9 +42,9 @@ class AdvancedLidarSensor:
 
         self.sensor_actor = self.world.spawn_actor(lidar_bp, self.transform, attach_to=self.ego_vehicle)
         if not self.sensor_actor:
-            raise RuntimeError(f"[AdvancedLidarSensor-{self.name}] ERROR: cannot spawn LiDAR sensor.")
+            raise RuntimeError(f"[LidarSensorManager-{self.name}] ERROR: cannot spawn LiDAR sensor.")
         self.sensor_actor.listen(self._on_lidar_data)
-        logging.info(f"[AdvancedLidarSensor-{self.name}] LiDAR spawned and listening.")
+        logging.info(f"[LidarSensorManager-{self.name}] LiDAR spawned and listening.")
 
     def _on_lidar_data(self, lidar_data: Any) -> None:
         # Convert raw data into an (N,4) NumPy array and store a copy to avoid race conditions.
@@ -58,7 +58,7 @@ class AdvancedLidarSensor:
         if self.sensor_actor and self.sensor_actor.is_alive:
             self.sensor_actor.stop()
             self.sensor_actor.destroy()
-            logging.info(f"[AdvancedLidarSensor-{self.name}] LiDAR destroyed.")
+            logging.info(f"[LidarSensorManager-{self.name}] LiDAR destroyed.")
 
     # --- Helper methods to reduce repetition ---
 
@@ -71,7 +71,7 @@ class AdvancedLidarSensor:
             return None
         pts = self._current_points.copy()
         if mask.shape[0] != pts.shape[0]:
-            logging.warning(f"[AdvancedLidarSensor-{self.name}] Mask shape {mask.shape} does not match points shape {pts.shape}.")
+            logging.warning(f"[LidarSensorManager-{self.name}] Mask shape {mask.shape} does not match points shape {pts.shape}.")
             return None
         filtered = pts[mask]
         return filtered if filtered.size > 0 else None

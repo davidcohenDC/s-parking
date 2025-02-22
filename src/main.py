@@ -27,7 +27,7 @@ def run_simulation_run(sim_index: int, scenario: SParkingScenario, config: dict)
 
     controller = ParkingController(
         ego_vehicle=ego_vehicle,
-        lidar_sensors=scenario.lidar_sensors,
+        lidar_sensor=scenario.lidar_sensor,
         config=config
     )
 

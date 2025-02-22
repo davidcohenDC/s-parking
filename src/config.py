@@ -54,19 +54,7 @@ CONFIG = {
     # -----------------------------------------------------------------------------
     # LiDAR Sensor Transforms
     # -----------------------------------------------------------------------------
-    'lidar_main_transform': carla.Transform(
-        carla.Location(x=0.0, y=0.0, z=1.75),
-        carla.Rotation(pitch=0.0, yaw=0.0, roll=0.0)
-    ),
-    'lidar_front_center_transform': carla.Transform(
-        carla.Location(x=1.9, y=0.0, z=0.75),
-        carla.Rotation(pitch=0.0, yaw=0.0, roll=0.0)
-    ),
-    'lidar_rear_left_transform': carla.Transform(
-        carla.Location(x=-1.9, y=-0.9, z=0.75),
-        carla.Rotation(pitch=0.0, yaw=0.0, roll=0.0)
-    ),
-    'lidar_rear_right_transform': carla.Transform(
+    'lidar_transform': carla.Transform(
         carla.Location(x=-1.9, y=0.9, z=0.75),
         carla.Rotation(pitch=0.0, yaw=0.0, roll=0.0)
     ),

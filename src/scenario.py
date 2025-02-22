@@ -1,10 +1,11 @@
 import time
 import logging
+
 import numpy as np
 import carla
 from typing import Optional, List
 
-from src.sensors.lidar_sensor import AdvancedLidarSensor
+from src.sensors.lidar_sensor import LidarSensorManager
 from sensors.collision_sensor import CollisionSensorManager
 
 
@@ -30,7 +31,8 @@ class SParkingScenario:
 
         # Lists for tracking spawned actors and sensors (for cleanup).
         self.actor_list: List[carla.Actor] = []
-        self.lidar_sensors: List[AdvancedLidarSensor] = []
+        self.lidar_sensor: Optional[LidarSensorManager] = None
+
         self.collision_sensor: Optional[CollisionSensorManager] = None
 
         self._set_sunny_weather()
@@ -59,7 +61,7 @@ class SParkingScenario:
           4) Wait for all vehicles to stop.
         """
         self._spawn_ego_and_obstacles()
-        self._spawn_all_lidar_sensors()
+        self._spawn_lidar_sensor()
         self._spawn_collision_sensor()
         self._wait_for_vehicles_stopped()
 
@@ -93,35 +95,33 @@ class SParkingScenario:
             else:
                 logging.warning(f"[SParkingScenario] Failed to spawn obstacle at {transform.location}.")
 
-    def _spawn_all_lidar_sensors(self) -> None:
+    def _spawn_lidar_sensor(self) -> None:
         """Spawn and attach multiple LiDAR sensors to the ego vehicle."""
         ego_vehicle = self.get_ego_vehicle()
         if not ego_vehicle:
             logging.error("[SParkingScenario] No ego vehicle to attach LiDAR sensors to.")
             return
 
-        self.lidar_sensors.clear()
-        lidar_positions = {
-            # 'main': self.config['lidar_main_transform'], # Main LiDAR sensor is not used in this scenario
-            'front_center': self.config['lidar_front_center_transform'],
-            'rear_left': self.config['lidar_rear_left_transform'],
-            'rear_right': self.config['lidar_rear_right_transform']
-        }
+        # remove lidar sensor if it already exists
+        if self.lidar_sensor:
+            self.lidar_sensor.destroy()
+            self.lidar_sensor = None
 
-        for name, transform in lidar_positions.items():
-            sensor = AdvancedLidarSensor(
-                world=self.world,
-                bp_lib=self.bp_lib,
-                ego_vehicle=ego_vehicle,
-                config=self.config,
-                transform=transform,
-                name=name
-            )
-            sensor.spawn()
-            self.lidar_sensors.append(sensor)
-            if sensor.sensor_actor:
-                self.actor_list.append(sensor.sensor_actor)
-            logging.info(f"[SParkingScenario] LiDAR '{name}' spawned and attached.")
+        lidar_transform = self.config['lidar_transform']
+        self.lidar_sensor= LidarSensorManager(
+            world=self.world,
+            bp_lib=self.bp_lib,
+            ego_vehicle=ego_vehicle,
+            config=self.config,
+            transform=lidar_transform,
+            name="main"
+        )
+
+        self.lidar_sensor.spawn()
+        if self.lidar_sensor.sensor_actor:
+            self.actor_list.append(self.lidar_sensor.sensor_actor)
+            logging.info("[SParkingScenario] LiDAR sensor spawned and attached.")
+
 
     def _spawn_collision_sensor(self) -> None:
         """Spawn and attach a collision sensor to the ego vehicle."""
@@ -169,10 +169,11 @@ class SParkingScenario:
         """
         Destroy all spawned actors (vehicles, sensors, obstacles) from the simulation run.
         """
-        # Destroy LiDAR sensors
-        for sensor in self.lidar_sensors:
-            sensor.destroy()
-        self.lidar_sensors.clear()
+        # Destroy LiDAR sensor
+        if self.lidar_sensor:
+            self.lidar_sensor.destroy()
+            self.lidar_sensor = None
+
 
         # Destroy collision sensor
         if self.collision_sensor and self.collision_sensor.sensor:

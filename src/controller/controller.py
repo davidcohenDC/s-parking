@@ -18,10 +18,10 @@ class ParkingController:
     centralizing configuration, and keeping methods focused and concise.
     """
 
-    def __init__(self, ego_vehicle: carla.Vehicle, lidar_sensors, config: Dict[str, Any]) -> None:
+    def __init__(self, ego_vehicle: carla.Vehicle, lidar_sensor, config: Dict[str, Any]) -> None:
         self.ego_vehicle = ego_vehicle
         # Convert list of lidar sensors to dictionary keyed by sensor name.
-        self.lidars = {sensor.name: sensor for sensor in lidar_sensors}
+        self.lidar = lidar_sensor
         self.config = config
         self.vehicle_control = VehicleController(ego_vehicle)
 
@@ -57,6 +57,7 @@ class ParkingController:
 
     def update(self) -> None:
         """Update the parking state machine for the current frame."""
+
         self.frame_count += 1
 
         # Update vehicle travel distance since last frame.
@@ -67,8 +68,8 @@ class ParkingController:
         self.prev_location = current_loc
 
         # Retrieve LiDAR sensor distances (default to 0.0 if no value)
-        dist_right = self.lidars.get("rear_right").get_min_distance_right() or 0.0
-        dist_back = self.lidars.get("rear_right").get_min_distance_back() or 0.0
+        dist_right = self.lidar.get_min_distance_right() or 0.0
+        dist_back = self.lidar.get_min_distance_back() or 0.0
 
         # Update the sensor buffer based on current state.
         self._update_sensor_buffer(dist_right, dist_back)
@@ -162,7 +163,7 @@ class ParkingController:
         """
         self.vehicle_control.reverse_straight()
         self.distance_on_arc += dist_step
-        back_dist = self.lidars.get("rear_right").get_min_distance_right() or 0.0
+        back_dist = self.lidar.get_min_distance_right() or 0.0
         if 0.0 < back_dist < self.min_back_distance:
             self._transition_to_state(
                 ParkingState.COUNTERSTEER,
@@ -205,13 +206,14 @@ class ParkingController:
         else:
             self.vehicle_control.forward_straight()
 
-        front_dist = self.lidars.get("front_center").get_min_distance_front()
-        if front_dist is not None and front_dist < self.forward_min_distance:
-            self._transition_to_state(
-                ParkingState.STOPPED,
-                f"Obstacle detected ahead ({front_dist:.2f} m) -> STOPPED"
-            )
-            return
+        # TODO: Implement obstacle detection and stopping.
+        # front_dist = self.lidar.get_min_distance_front()
+        # if front_dist is not None and front_dist < self.forward_min_distance:
+        #     self._transition_to_state(
+        #         ParkingState.STOPPED,
+        #         f"Obstacle detected ahead ({front_dist:.2f} m) -> STOPPED"
+        #     )
+        #     return
 
         self.distance_on_arc += dist_step
         if self.distance_on_arc >= self.forward_min_distance:
