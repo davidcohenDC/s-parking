@@ -18,15 +18,17 @@ logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 # Minimal Configuration for LiDAR Debugging
 # -----------------------------------------------------------------------------
 CONFIG = {
-    'lidar_range': 5.0,
-    'lidar_rotation_frequency': 20,
-    'lidar_channels': 64,
-    'lidar_pps': 64000,
+    'LIDAR_RANGE': 5.0,
+    'LIDAR_ROTATION_FREQUENCY': 20,
+    'LIDAR_CHANNELS': 64,
+    'LIDAR_PPS': 64000,
+    # FRONT RIGHT
     'lidar_transform': carla.Transform(
-        carla.Location(x=2.2, y=0.0, z=1.0),
-        carla.Rotation(pitch=-10.0, yaw=0.0, roll=0.0)
+        carla.Location(x=2.0, y=0.75, z=0.0),
+        carla.Rotation(pitch=0.0, yaw=5.0, roll=0.0)
     ),
-    'lidar_buffer_size': 10,
+
+    'LIDAR_BUFFER_SIZE': 10,
 }
 
 # -----------------------------------------------------------------------------
@@ -46,10 +48,10 @@ class AdvancedLidarManager:
             raise ValueError("Ego vehicle is None. Cannot attach LiDAR.")
 
         lidar_bp = self.bp_lib.find('sensor.lidar.ray_cast')
-        lidar_bp.set_attribute('range', str(self.config['lidar_range']))
-        lidar_bp.set_attribute('rotation_frequency', str(self.config['lidar_rotation_frequency']))
-        lidar_bp.set_attribute('channels', str(self.config['lidar_channels']))
-        lidar_bp.set_attribute('points_per_second', str(self.config['lidar_pps']))
+        lidar_bp.set_attribute('range', str(self.config['LIDAR_RANGE']))
+        lidar_bp.set_attribute('rotation_frequency', str(self.config['LIDAR_ROTATION_FREQUENCY']))
+        lidar_bp.set_attribute('channels', str(self.config['LIDAR_CHANNELS']))
+        lidar_bp.set_attribute('points_per_second', str(self.config['LIDAR_PPS']))
 
         lidar_transform = self.config['lidar_transform']
         self.lidar_actor = self.world.spawn_actor(lidar_bp, lidar_transform, attach_to=self.ego_vehicle)
@@ -72,14 +74,14 @@ class AdvancedLidarManager:
         self.world.debug.draw_point(expected_transform.location,
                                     size=0.5,
                                     color=carla.Color(255, 0, 0),
-                                    life_time=100)
+                                    life_time=30)
         # Draw an arrow showing the sensor's forward direction.
         forward_vector = expected_transform.get_forward_vector()
         arrow_end = expected_transform.location + forward_vector * 2.0
         self.world.debug.draw_arrow(expected_transform.location, arrow_end,
                                     thickness=0.1,
                                     color=carla.Color(0, 255, 0),
-                                    life_time=100)
+                                    life_time=30)
         self.lidar_actor.listen(self._lidar_callback)
 
     def _lidar_callback(self, lidar_data):
@@ -123,6 +125,7 @@ def main():
     client = carla.Client(CARLA_HOST, CARLA_PORT)
     client.set_timeout(10.0)
     world = client.get_world()
+
 
     blueprint_library = world.get_blueprint_library()
 
@@ -174,7 +177,7 @@ def main():
             # Set a fixed pitch and roll.
             new_rotation = carla.Rotation(pitch=-15, yaw=new_yaw, roll=0)
             new_transform = carla.Transform(new_location, new_rotation)
-            spectator.set_transform(new_transform)
+            # spectator.set_transform(new_transform)
 
             # Optional: print the new spectator transform.
             print(new_transform)

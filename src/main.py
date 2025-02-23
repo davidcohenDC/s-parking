@@ -14,7 +14,7 @@ def run_simulation_run(sim_index: int, scenario: SParkingScenario, config: dict)
       3. Instantiate the parking controller.
       4. Run the simulation steps and check for collisions.
     """
-    logging.info(f"--- Starting Simulation Run {sim_index + 1}/{config['num_simulations']} ---")
+    logging.info(f"--- Starting Simulation Run {sim_index + 1}/{config['SIMULATION_NUM_RUNS']} ---")
 
     # Cleanup from previous run, then set up scenario
     scenario.cleanup_all()
@@ -28,18 +28,15 @@ def run_simulation_run(sim_index: int, scenario: SParkingScenario, config: dict)
     controller = ParkingController(
         ego_vehicle=ego_vehicle,
         lidar_sensor=scenario.lidar_sensor,
+        obstacle_detectors=scenario.obstacle_detectors,
         config=config
     )
 
     # Run simulation steps
-    for step in range(config['simulation_steps']):
+    for step in range(config['SIMULATION_NUM_STEPS']):
         controller.update()
-        if scenario.collision_sensor and scenario.collision_sensor.collided():
-            logging.error("[MAIN] Collision detected, ending run.")
-            break
-
     logging.info("[MAIN] Simulation run finished.")
-    time.sleep(config['wait_between_simulations'])
+    time.sleep(config['SIMULATION_WAIT_BETWEEN_RUNS'])
 
 
 def main() -> None:
@@ -51,9 +48,9 @@ def main() -> None:
 
     # Adjust the spectator camera once
     spectator = scenario.world.get_spectator()
-    spectator.set_transform(CONFIG['spectator_transform'])
+    spectator.set_transform(CONFIG['SPECTATOR_TRANSFORM'])
 
-    num_runs = CONFIG.get('num_simulations', 1)
+    num_runs = CONFIG.get('SIMULATION_NUM_RUNS', 1)
     for sim_index in range(num_runs):
         run_simulation_run(sim_index, scenario, CONFIG)
 

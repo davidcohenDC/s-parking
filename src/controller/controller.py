@@ -1,8 +1,9 @@
 import logging
 import carla
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 
 from src.controller.parking_state import ParkingState
+from src.sensors.obstacle_detector import ObstacleDetector
 from src.utils.distance import euclid_dist
 from src.controller.vehicle_controller import VehicleController
 from src.utils.sensor_buffer import SensorBuffer
@@ -18,46 +19,65 @@ class ParkingController:
     centralizing configuration, and keeping methods focused and concise.
     """
 
-    def __init__(self, ego_vehicle: carla.Vehicle, lidar_sensor, config: Dict[str, Any]) -> None:
+    def __init__(self, ego_vehicle: carla.Vehicle, lidar_sensor, obstacle_detectors: List[ObstacleDetector], config: Dict[str, Any]):
         self.ego_vehicle = ego_vehicle
         # Convert list of lidar sensors to dictionary keyed by sensor name.
         self.lidar = lidar_sensor
+        self.obstacle_detectors = obstacle_detectors
         self.config = config
         self.vehicle_control = VehicleController(ego_vehicle)
 
         # Initialize state and frame tracking
         self.state: ParkingState = ParkingState.IDLE
         self.frame_count: int = 0
-        self.fps: int = config.get('fps')
+        self.fps: int = config.get('FPS')
 
         # Phase distance thresholds (in meters)
-        self.dist_begin_steer: float = config.get('distance_to_begin_steering')
-        self.arc1_length: float = config.get('arc1_length')
-        self.reverse_straight_length: float = config.get('reverse_straight_length')
-        self.arc2_length: float = config.get('arc2_length')
+        self.dist_begin_steer: float = config.get('PARKING_ALIGN_BEGIN_STEERING_DIST')
+        self.arc1_length: float = config.get('VEHICLE_ARC1_LENGTH')
+        self.reverse_straight_length: float = config.get('VEHICLE_REVERSE_STRAIGHT_LENGTH')
+        self.arc2_length: float = config.get('VEHICLE_ARC2_LENGTH')
         self.min_back_distance: float = config.get('min_back_distance')
-        self.forward_min_distance: float = config.get('forward_min_distance')
+        self.forward_min_distance: float = config.get('PARKING_FORWARD_LENGTH')
 
         # Smoothing & hysteresis
-        self.required_frames: int = config.get('required_consecutive_frames')
-        self.sensor_buffer = SensorBuffer(max_size=config.get('lidar_buffer_size'))
+        self.required_frames: int = config.get('LIDAR_REQUIRED_FRAMES')
+        self.sensor_buffer = SensorBuffer(max_size=config.get('LIDAR_BUFFER_SIZE'))
         self.consec_count: int = 0
 
         # Realignment parameters
-        self.yaw_threshold: float = config.get('yaw_threshold')
-        self.conversion_factor: float = config.get('conversion_factor')
-        self.max_correction: float = config.get('max_correction')
-        self.desired_yaw: float = config.get('desired_yaw')
-        self.forward_throttle: float = config.get('forward_throttle')
+        self.yaw_threshold: float = config.get('REALIGNMENT_YAW_THRESHOLD')
+        self.conversion_factor: float = config.get('REALIGNMENT_CONVERSION_FACTOR')
+        self.max_correction: float = config.get('REALIGNMENT_MAX_CORRECTION')
+        self.desired_yaw: float = config.get('REALIGNMENT_DESIRED_YAW')
+        self.forward_throttle: float = config.get('VEHICLE_FORWARD_THROTTLE')
 
         # Tracking variables for distance and corrections
         self.distance_on_arc: float = 0.0
         self.prev_location: Optional[carla.Location] = None
         self.realign_count: int = 0
+        self.parking_forward_min_dist: float = config.get('PARKING_FORWARD_MIN_DIST')
+
+        self.min_obstacle_distance: float = config.get('OBSTACLE_MIN_DISTANCE')
 
     def update(self) -> None:
-        """Update the parking state machine for the current frame."""
+        # Global safety check: if any obstacle is detected within 10cm, stop immediately.
+        closest_obs_dist = None
+        for detector in self.obstacle_detectors:
+            obs = detector.get_closest_obstacle()
+            if obs is not None:
+                if closest_obs_dist is None or obs['distance'] < closest_obs_dist['distance']:
+                    closest_obs_dist = obs
 
+        if closest_obs_dist is not None and self.min_obstacle_distance > closest_obs_dist['distance'] > 0.0:
+            self._transition_to_state(
+                ParkingState.STOPPED,
+                f"[ParkingController] Obstacle {closest_obs_dist['other_actor']} detected at {closest_obs_dist['distance']:.2f} m -> STOPPED"
+            )
+            self.vehicle_control.stop()
+            return
+
+        """Update the parking state machine for the current frame."""
         self.frame_count += 1
 
         # Update vehicle travel distance since last frame.
@@ -163,13 +183,7 @@ class ParkingController:
         """
         self.vehicle_control.reverse_straight()
         self.distance_on_arc += dist_step
-        back_dist = self.lidar.get_min_distance_right() or 0.0
-        if 0.0 < back_dist < self.min_back_distance:
-            self._transition_to_state(
-                ParkingState.COUNTERSTEER,
-                f"Obstacle detected behind ({back_dist:.2f} m) -> COUNTERSTEER"
-            )
-            return
+
         if self.distance_on_arc >= self.reverse_straight_length:
             self._transition_to_state(
                 ParkingState.COUNTERSTEER,
@@ -206,14 +220,19 @@ class ParkingController:
         else:
             self.vehicle_control.forward_straight()
 
-        # TODO: Implement obstacle detection and stopping.
-        # front_dist = self.lidar.get_min_distance_front()
-        # if front_dist is not None and front_dist < self.forward_min_distance:
-        #     self._transition_to_state(
-        #         ParkingState.STOPPED,
-        #         f"Obstacle detected ahead ({front_dist:.2f} m) -> STOPPED"
-        #     )
-        #     return
+        # get front obstacle detector distance
+        front_obstacle_distance_left = self.obstacle_detectors[0].get_closest_obstacle()['distance']
+        front_obstacle_distance_right = self.obstacle_detectors[1].get_closest_obstacle()['distance']
+
+        # GET MAXIMUM DISTANCE
+        dist = max(front_obstacle_distance_left, front_obstacle_distance_right)
+
+        if dist < self.parking_forward_min_dist:
+            self._transition_to_state(
+                ParkingState.STOPPED,
+                "FORWARD_STRAIGHT -> STOPPED (Front obstacle detected)"
+            )
+            return
 
         self.distance_on_arc += dist_step
         if self.distance_on_arc >= self.forward_min_distance:

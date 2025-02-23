@@ -33,12 +33,12 @@ class LidarSensorManager:
             raise ValueError(f"[LidarSensorManager-{self.name}] ERROR: Ego vehicle is None.")
         lidar_bp = self.bp_lib.find('sensor.lidar.ray_cast')
         # Set sensor attributes from configuration
-        lidar_bp.set_attribute('range', str(self.config['lidar_range']))
-        lidar_bp.set_attribute('rotation_frequency', str(self.config['lidar_rotation_frequency']))
-        lidar_bp.set_attribute('channels', str(self.config['lidar_channels']))
-        lidar_bp.set_attribute('points_per_second', str(self.config['lidar_pps']))
-        lidar_bp.set_attribute('sensor_tick', str(self.config['sensor_tick']))
-        lidar_bp.set_attribute('dropoff_general_rate', str(self.config['dropoff_general_rate']))
+        lidar_bp.set_attribute('range', str(self.config['LIDAR_RANGE']))
+        lidar_bp.set_attribute('rotation_frequency', str(self.config['LIDAR_ROTATION_FREQUENCY']))
+        lidar_bp.set_attribute('channels', str(self.config['LIDAR_CHANNELS']))
+        lidar_bp.set_attribute('points_per_second', str(self.config['LIDAR_PPS']))
+        lidar_bp.set_attribute('sensor_tick', str(self.config['LIDAR_SENSOR_TICK']))
+        lidar_bp.set_attribute('dropoff_general_rate', str(self.config['LIDAR_DROPOFF_GENERAL_RATE']))
 
         self.sensor_actor = self.world.spawn_actor(lidar_bp, self.transform, attach_to=self.ego_vehicle)
         if not self.sensor_actor:

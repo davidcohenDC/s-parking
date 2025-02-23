@@ -14,39 +14,44 @@ CARLA_PORT = int(os.environ.get("CARLA_PORT", "2000"))
 # -----------------------------------------------------------------------------
 CONFIG = {
     # Connection settings
-    'carla_host': CARLA_HOST,
-    'carla_port': CARLA_PORT,
+    'CARLA_HOST': CARLA_HOST,
+    'CARLA_PORT': CARLA_PORT,
 
     # -----------------------------------------------------------------------------
     # Simulation Timing
     # -----------------------------------------------------------------------------
-    'num_simulations': 13,          # Number of simulation runs
-    'simulation_steps': 100000,     # Number of update steps per simulation run
-    'wait_between_simulations': 1,  # Seconds to wait between simulation runs
+    'SIMULATION_NUM_RUNS': 15,          # Number of simulation runs
+    'SIMULATION_NUM_STEPS': 80000,     # Number of update steps per simulation run
+    'SIMULATION_WAIT_BETWEEN_RUNS': 1,  # Seconds to wait between simulation runs
 
     # -----------------------------------------------------------------------------
     # World Settings
     # -----------------------------------------------------------------------------
-    'world_map': {
+    'WORLD_MAP': {
         'map_name': 'Town01_Opt',
         'map_layers': carla.MapLayer.Walls
     },
+    'FPS': 20,
 
     # -----------------------------------------------------------------------------
     # Spawn Transforms
     # -----------------------------------------------------------------------------
     # Ego vehicle spawn
-    'ego_spawn': carla.Transform(
+    'EGO_SPAWN_TRANSFORM': carla.Transform(
         carla.Location(x=84, y=-0.0, z=2),
         carla.Rotation(yaw=180)
     ),
     # Obstacles spawns
-    'obstacles_spawns': [
-        carla.Transform(carla.Location(x=86, y=-2.8, z=2), carla.Rotation(yaw=180)),
-        carla.Transform(carla.Location(x=96, y=-2.8, z=2), carla.Rotation(yaw=180))
+    'OBSTACLES_SPAWNS_TRANSFORMS': [
+        carla.Transform(
+            carla.Location(x=86, y=-2.8, z=2),
+            carla.Rotation(yaw=180)),
+        carla.Transform(
+            carla.Location(x=96, y=-2.8, z=2),
+            carla.Rotation(yaw=180))
     ],
     # Spectator camera transform
-    'spectator_transform': carla.Transform(
+    'SPECTATOR_TRANSFORM': carla.Transform(
         carla.Location(x=102, y=-3, z=15),
         carla.Rotation(pitch=-55, yaw=-180, roll=0)
     ),
@@ -54,56 +59,73 @@ CONFIG = {
     # -----------------------------------------------------------------------------
     # LiDAR Sensor Transforms
     # -----------------------------------------------------------------------------
-    'lidar_transform': carla.Transform(
-        carla.Location(x=-1.9, y=0.9, z=0.75),
+    'LIDAR_TRANSFORM': carla.Transform(
+        carla.Location(x=-1.75, y=0.9, z=0.75),
         carla.Rotation(pitch=0.0, yaw=0.0, roll=0.0)
     ),
 
-    'fps': 20,
+    'LIDAR_RANGE': 10.0,
+    'LIDAR_ROTATION_FREQUENCY': 50,
+    'LIDAR_CHANNELS': 64,
+    'LIDAR_PPS': 200000,
+    'LIDAR_SENSOR_TICK': 0.0,
+    'LIDAR_DROPOFF_GENERAL_RATE': 0.1,
+    'LIDAR_BUFFER_SIZE': 1,
+    'LIDAR_REQUIRED_FRAMES': 1,
+
+    # -----------------------------------------------------------------------------
+    # Obstacle Detector Parameters
+    # -----------------------------------------------------------------------------
+
+    'OBSTACLE_FRONT_RIGHT_TRANSFORM': carla.Transform(
+        carla.Location(x=1.85, y=0.75, z=0.8),
+        carla.Rotation(pitch=0.0, yaw=5.0, roll=0.0)
+    ),
+    'OBSTACLE_FRONT_LEFT_TRANSFORM': carla.Transform(
+        carla.Location(x=1.85, y=-0.75, z=0.8),
+        carla.Rotation(pitch=0.0, yaw=5.0, roll=0.0)
+    ),
+    'OBSTACLE_REAR_RIGHT_TRANSFORM': carla.Transform(
+        carla.Location(x=-1.85, y=0.75, z=0.8),
+        carla.Rotation(pitch=0.0, yaw=-180.0, roll=0.0)
+    ),
+    'OBSTACLE_REAR_LEFT_TRANSFORM': carla.Transform(
+        carla.Location(x=-1.85, y=-0.75, z=0.8),
+        carla.Rotation(pitch=0.0, yaw=-180.0, roll=0.0)
+    ),
+
+    'OBSTACLE_MIN_DISTANCE': 0.15,
+    'OBSTACLE_DETECTION_DISTANCE': 5.0,
+    'OBSTACLE_HIT_RADIUS': 0.4,
+    'OBSTACLE_ONLY_DYNAMICS': False,
+    'OBSTACLE_SENSOR_TICK': 0.0,
+    'OBSTACLE_MAX_HISTORY': 4000,
 
     # -----------------------------------------------------------------------------
     # Parking Alignment Thresholds
     # -----------------------------------------------------------------------------
-    'distance_to_begin_steering': 1.1,
-    'distance_to_begin_counter': 2.0,
-    'distance_to_stop_reverse': 0.8,
-    'distance_to_stop_forward': 0.5,
+
+    'PARKING_ALIGN_BEGIN_STEERING_DIST': 1.1,
+    'PARKING_FORWARD_LENGTH': 0.9,
+    'PARKING_FORWARD_MIN_DIST': 1.0,
 
     # -----------------------------------------------------------------------------
     # Vehicle Dynamics
     # -----------------------------------------------------------------------------
-    'reverse_throttle': 0.25,
-    'forward_throttle': 0.2,
-    'steer_angle_in': 0.95,
-    'steer_angle_out': -0.95,
-    'arc1_length': 1.8,
-    'reverse_straight_length': 2.76,
-    'arc2_length': 1.9,
+    'VEHICLE_REVERSE_THROTTLE': 0.25,
+    'VEHICLE_FORWARD_THROTTLE': 0.2,
+    'VEHICLE_STEER_ANGLE_IN': 0.95,
+    'VEHICLE_STEER_ANGLE_OUT': -0.95,
+    'VEHICLE_ARC1_LENGTH': 1.8,
+    'VEHICLE_REVERSE_STRAIGHT_LENGTH': 2.76,
+    'VEHICLE_ARC2_LENGTH': 1.9,
 
     # -----------------------------------------------------------------------------
     # Realigning Forward Straight
     # -----------------------------------------------------------------------------
-    'desired_yaw': 180.0,
-    'yaw_threshold': 0.2,
-    'conversion_factor': 0.4,
-    'max_correction': 1.0,
+    'REALIGNMENT_DESIRED_YAW': 180.0,
+    'REALIGNMENT_YAW_THRESHOLD': 0.2,
+    'REALIGNMENT_CONVERSION_FACTOR': 0.4,
+    'REALIGNMENT_MAX_CORRECTION': 1.0,
 
-
-    # -----------------------------------------------------------------------------
-    # Sensor Parameters
-    # -----------------------------------------------------------------------------
-    'sensor_tick': 0.0,
-    'dropoff_general_rate': 0.1,
-    'min_back_distance': 0.0,
-    'forward_min_distance': 0.9,
-    'lidar_range': 10.0,
-    'lidar_rotation_frequency': 50,
-    'lidar_channels': 64,
-    'lidar_pps': 200000,
-
-    # -----------------------------------------------------------------------------
-    # Smoothing & Hysteresis
-    # -----------------------------------------------------------------------------
-    'lidar_buffer_size': 1,
-    'required_consecutive_frames': 1,
 }

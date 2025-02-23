@@ -7,6 +7,7 @@ from typing import Optional, List
 
 from src.sensors.lidar_sensor import LidarSensorManager
 from sensors.collision_sensor import CollisionSensorManager
+from src.sensors.obstacle_detector import ObstacleDetector
 
 
 class SParkingScenario:
@@ -17,22 +18,22 @@ class SParkingScenario:
     def __init__(self, config: dict, client: Optional[carla.Client] = None) -> None:
         self.config = config
         self.client = client or carla.Client(
-            config.get("carla_host", "127.0.0.1"),
-            config.get("carla_port", 2000)
+            config.get("CARLA_HOST", "127.0.0.1"),
+            config.get("CARLA_PORT", 2000)
         )
         self.client.set_timeout(10.0)
 
         # Load the world using unpacked world map configuration.
-        self.world = self.client.load_world(**config['world_map'])
+        self.world = self.client.load_world(**config['WORLD_MAP'])
         self.bp_lib = self.world.get_blueprint_library()
 
-        self.ego_spawn = config['ego_spawn']
-        self.obstacles_spawns = config['obstacles_spawns']
+        self.ego_spawn = config['EGO_SPAWN_TRANSFORM']
+        self.obstacles_spawns = config['OBSTACLES_SPAWNS_TRANSFORMS']
 
         # Lists for tracking spawned actors and sensors (for cleanup).
         self.actor_list: List[carla.Actor] = []
         self.lidar_sensor: Optional[LidarSensorManager] = None
-
+        self.obstacle_detectors: List[ObstacleDetector] = []
         self.collision_sensor: Optional[CollisionSensorManager] = None
 
         self._set_sunny_weather()
@@ -63,7 +64,9 @@ class SParkingScenario:
         self._spawn_ego_and_obstacles()
         self._spawn_lidar_sensor()
         self._spawn_collision_sensor()
+        self._spawn_obstacle_detector()
         self._wait_for_vehicles_stopped()
+
 
     def _spawn_actor(self, blueprint: carla.ActorBlueprint, transform: carla.Transform) -> Optional[carla.Actor]:
         """
@@ -84,6 +87,8 @@ class SParkingScenario:
             return
         logging.info("[SParkingScenario] Ego vehicle spawned.")
 
+        self.actor_list.append(ego_vehicle)
+
         # Spawn obstacles.
         for transform in self.obstacles_spawns:
             obs_bp = self.bp_lib.find('vehicle.audi.tt')
@@ -91,9 +96,13 @@ class SParkingScenario:
             if obs_actor:
                 obs_actor.set_autopilot(False)
                 obs_actor.apply_control(carla.VehicleControl(throttle=0.0, brake=1.0))
+                obs_actor.set_collisions(True)
+                obs_actor.set_simulate_physics(True)
+                self.actor_list.append(obs_actor)
                 logging.info(f"[SParkingScenario] Spawned obstacle at {transform.location}.")
             else:
                 logging.warning(f"[SParkingScenario] Failed to spawn obstacle at {transform.location}.")
+
 
     def _spawn_lidar_sensor(self) -> None:
         """Spawn and attach multiple LiDAR sensors to the ego vehicle."""
@@ -107,7 +116,7 @@ class SParkingScenario:
             self.lidar_sensor.destroy()
             self.lidar_sensor = None
 
-        lidar_transform = self.config['lidar_transform']
+        lidar_transform = self.config['LIDAR_TRANSFORM']
         self.lidar_sensor= LidarSensorManager(
             world=self.world,
             bp_lib=self.bp_lib,
@@ -135,6 +144,57 @@ class SParkingScenario:
         if self.collision_sensor.sensor:
             self.actor_list.append(self.collision_sensor.sensor)
             logging.info("[SParkingScenario] Collision sensor spawned.")
+
+    def _spawn_obstacle_detector(self) -> None:
+        """Spawn and attach obstacle detectors (front and rear) to the ego vehicle."""
+        ego_vehicle = self.get_ego_vehicle()
+        if not ego_vehicle:
+            logging.error("[SParkingScenario] No ego vehicle for obstacle detectors.")
+            return
+
+        # Destroy and clear any previously spawned obstacle detectors.
+        for detector in self.obstacle_detectors:
+            detector.destroy()
+        self.obstacle_detectors.clear()
+
+        # Create the front and rear obstacle detectors using their respective transforms.
+        front_right_detector = ObstacleDetector(
+            parent_actor=ego_vehicle,
+            transform=self.config['OBSTACLE_FRONT_RIGHT_TRANSFORM'],
+            config=self.config
+        )
+
+        front_left_detector = ObstacleDetector(
+            parent_actor=ego_vehicle,
+            transform=self.config['OBSTACLE_FRONT_LEFT_TRANSFORM'],
+            config=self.config
+        )
+
+        rear_right_detector = ObstacleDetector(
+            parent_actor=ego_vehicle,
+            transform=self.config['OBSTACLE_REAR_RIGHT_TRANSFORM'],
+            config=self.config
+        )
+
+        rear_left_detector = ObstacleDetector(
+            parent_actor=ego_vehicle,
+            transform=self.config['OBSTACLE_REAR_LEFT_TRANSFORM'],
+            config=self.config
+        )
+
+        # Add both detectors to the list.
+        self.obstacle_detectors.extend([
+            front_right_detector,
+            front_left_detector,
+            rear_right_detector,
+            rear_left_detector,
+        ])
+
+        # If a detector creates a sensor actor, add it to the actor list.
+        for idx, detector in enumerate(self.obstacle_detectors):
+            if hasattr(detector, 'sensor') and detector.sensor is not None:
+                self.actor_list.append(detector.sensor)
+                logging.info(f"[SParkingScenario] Obstacle detector {idx} spawned.")
 
     def _wait_for_vehicles_stopped(self) -> None:
         """

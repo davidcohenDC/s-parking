@@ -12,10 +12,10 @@ class VehicleController:
 
     def __init__(self, vehicle: carla.Vehicle) -> None:
         self.vehicle = vehicle
-        self.reverse_throttle: float = CONFIG['reverse_throttle']
-        self.steer_angle_in: float = CONFIG['steer_angle_in']
-        self.steer_angle_out: float = CONFIG['steer_angle_out']
-        self.forward_throttle: float = CONFIG['forward_throttle']
+        self.reverse_throttle: float = CONFIG['VEHICLE_REVERSE_THROTTLE']
+        self.steer_angle_in: float = CONFIG['VEHICLE_STEER_ANGLE_IN']
+        self.steer_angle_out: float = CONFIG['VEHICLE_STEER_ANGLE_OUT']
+        self.forward_throttle: float = CONFIG['VEHICLE_FORWARD_THROTTLE']
 
     def drive(
         self,
