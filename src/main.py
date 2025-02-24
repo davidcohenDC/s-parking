@@ -35,14 +35,21 @@ def run_simulation_run(sim_index: int, scenario: SParkingScenario, config: dict)
     # Run simulation steps
     for step in range(config['SIMULATION_NUM_STEPS']):
         controller.update()
+
+    scenario.cleanup_all()
+
     logging.info("[MAIN] Simulation run finished.")
     time.sleep(config['SIMULATION_WAIT_BETWEEN_RUNS'])
 
 
 def main() -> None:
-    # Initialize logging (global configuration)
+    # Initialize logging
     logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
 
+    parking_gaps = [1, 0, -1, -2, -3]  # Fixed values to test
+    num_runs = CONFIG.get('SIMULATION_NUM_RUNS', 1)  # Number of runs per gap
+
+    # Create the scenario once and reuse it
     scenario = SParkingScenario(CONFIG)
     time.sleep(2)  # Allow time for initialization
 
@@ -50,12 +57,23 @@ def main() -> None:
     spectator = scenario.world.get_spectator()
     spectator.set_transform(CONFIG['SPECTATOR_TRANSFORM'])
 
-    num_runs = CONFIG.get('SIMULATION_NUM_RUNS', 1)
-    for sim_index in range(num_runs):
-        run_simulation_run(sim_index, scenario, CONFIG)
+    for offset in parking_gaps:
+        for sim_index in range(num_runs):  # Repeat for each simulation run
+            logging.info(f"[Simulation] Run {sim_index + 1}/{num_runs} with back car moved by {offset:.2f} meters")
+            scenario.reset_obstacle_positions()
 
+            # Restore the default position before applying a new offset
+            if len(scenario.obstacles_spawns) > 1:
+                scenario.obstacles_spawns[1].location = scenario.obstacles_spawns[1].location
+                scenario.obstacles_spawns[1].location.x += offset  # Apply new offset
+
+            # Run the simulation for the current offset
+            run_simulation_run(sim_index, scenario, CONFIG)
+
+    # Final cleanup after all simulations
     scenario.cleanup_all()
     logging.info("[MAIN] All simulation runs complete.")
+
 
 
 if __name__ == "__main__":

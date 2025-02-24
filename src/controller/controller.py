@@ -2,6 +2,8 @@ import logging
 import carla
 from typing import Optional, Dict, Any, List
 
+import numpy as np
+
 from src.controller.parking_state import ParkingState
 from src.sensors.obstacle_detector import ObstacleDetector
 from src.utils.distance import euclid_dist
@@ -61,23 +63,31 @@ class ParkingController:
         self.min_obstacle_distance: float = config.get('OBSTACLE_MIN_DISTANCE')
 
     def update(self) -> None:
-        # Global safety check: if any obstacle is detected within 10cm, stop immediately.
-        closest_obs_dist = None
-        for detector in self.obstacle_detectors:
-            obs = detector.get_closest_obstacle()
-            if obs is not None:
-                if closest_obs_dist is None or obs['distance'] < closest_obs_dist['distance']:
-                    closest_obs_dist = obs
+        # Determine sensor indices based on the current state.
+        if self.state in [ParkingState.REVERSE_STRAIGHT_1,
+                          ParkingState.STEER_INTO_SLOT,
+                          ParkingState.REVERSE_STRAIGHT_2,
+                          ParkingState.COUNTERSTEER]:
+            sensor_indices = [3, 4, 5]  # Rear sensors
+        elif self.state == ParkingState.FORWARD_STRAIGHT:
+            sensor_indices = [1]  # Front center sensor
+        else:
+            sensor_indices = []  # No sensor check needed
 
-        if closest_obs_dist is not None and self.min_obstacle_distance > closest_obs_dist['distance'] > 0.0:
-            self._transition_to_state(
-                ParkingState.STOPPED,
-                f"[ParkingController] Obstacle {closest_obs_dist['other_actor']} detected at {closest_obs_dist['distance']:.2f} m -> STOPPED"
-            )
-            self.vehicle_control.stop()
-            return
+        # Global safety check performed only once every second (or every fps frames).
+        if sensor_indices and self.frame_count % self.fps == 0:
+            closest_obs = self._check_relevant_obstacles(sensor_indices)
+            # Use a forward-specific threshold when in FORWARD_STRAIGHT
+            threshold = self.parking_forward_min_dist if self.state == ParkingState.FORWARD_STRAIGHT else self.min_obstacle_distance
+            if closest_obs is not None and 0.0 < closest_obs['distance'] < threshold:
+                self._transition_to_state(
+                    ParkingState.STOPPED,
+                    f"[ParkingController] Obstacle {closest_obs['other_actor']} detected at {closest_obs['distance']:.2f} m -> STOPPED"
+                )
+                self.vehicle_control.stop()
+                return
 
-        """Update the parking state machine for the current frame."""
+        # Update the parking state machine for the current frame.
         self.frame_count += 1
 
         # Update vehicle travel distance since last frame.
@@ -95,15 +105,26 @@ class ParkingController:
         self._update_sensor_buffer(dist_right, dist_back)
         dist_smoothed = self.sensor_buffer.median() or 0.0
 
+        # Determine which sensor is being used and its position index based on the current state.
+        if self.state == ParkingState.REVERSE_STRAIGHT_1:
+            sensor_used = "rear_right (right)"
+            sensor_pos_index = 3  # right rear sensor
+        elif self.state == ParkingState.REVERSE_STRAIGHT_2:
+            sensor_used = "rear_right (back)"
+            sensor_pos_index = 4  # center rear sensor
+        elif self.state == ParkingState.FORWARD_STRAIGHT:
+            sensor_used = "front (center)"
+            sensor_pos_index = 1  # center front sensor (from obstacle detectors)
+        else:
+            sensor_used = "N/A"
+            sensor_pos_index = "N/A"
+
         # Log sensor and state information periodically.
         if self.frame_count % self.fps == 0:
-            sensor_used = "rear_right (right)" if self.state == ParkingState.REVERSE_STRAIGHT_1 else (
-                "rear_right (back)" if self.state == ParkingState.REVERSE_STRAIGHT_2 else "N/A"
-            )
             logging.info(
                 f"[ParkingController] | State: {self.state.name} | Step: {dist_step:.2f} m | "
                 f"Right: {dist_right:.2f} m | Back: {dist_back:.2f} m | "
-                f"Smoothed ({sensor_used}): {dist_smoothed:.2f} m"
+                f"Smoothed ({sensor_used}, pos {sensor_pos_index}): {dist_smoothed:.2f} m"
             )
 
         # State machine transitions.
@@ -121,6 +142,20 @@ class ParkingController:
             self._forward_straight_phase(dist_step)
         elif self.state == ParkingState.STOPPED:
             self._stop()
+
+    def _check_relevant_obstacles(self, sensor_indices: List[int]) -> Optional[Dict[str, Any]]:
+        """
+        Check the specified obstacle detectors and return the closest obstacle detected.
+        """
+        closest_obs = None
+        for idx in sensor_indices:
+            detector = self.obstacle_detectors[idx]
+            obs = detector.get_closest_obstacle()
+            if obs is not None:
+                logging.info(f"detector {idx} distance {obs['distance']}")
+                if closest_obs is None or obs['distance'] < closest_obs['distance']:
+                    closest_obs = obs
+        return closest_obs
 
     def _update_sensor_buffer(self, dist_right: float, dist_back: float) -> None:
         """
@@ -220,20 +255,7 @@ class ParkingController:
         else:
             self.vehicle_control.forward_straight()
 
-        # get front obstacle detector distance
-        front_obstacle_distance_left = self.obstacle_detectors[0].get_closest_obstacle()['distance']
-        front_obstacle_distance_right = self.obstacle_detectors[1].get_closest_obstacle()['distance']
-
-        # GET MAXIMUM DISTANCE
-        dist = max(front_obstacle_distance_left, front_obstacle_distance_right)
-
-        if dist < self.parking_forward_min_dist:
-            self._transition_to_state(
-                ParkingState.STOPPED,
-                "FORWARD_STRAIGHT -> STOPPED (Front obstacle detected)"
-            )
-            return
-
+        # Update distance traveled during forward phase.
         self.distance_on_arc += dist_step
         if self.distance_on_arc >= self.forward_min_distance:
             self._transition_to_state(

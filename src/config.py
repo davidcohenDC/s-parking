@@ -20,8 +20,8 @@ CONFIG = {
     # -----------------------------------------------------------------------------
     # Simulation Timing
     # -----------------------------------------------------------------------------
-    'SIMULATION_NUM_RUNS': 15,          # Number of simulation runs
-    'SIMULATION_NUM_STEPS': 80000,     # Number of update steps per simulation run
+    'SIMULATION_NUM_RUNS': 2,          # Number of simulation runs
+    'SIMULATION_NUM_STEPS': 90000,     # Number of update steps per simulation run
     'SIMULATION_WAIT_BETWEEN_RUNS': 1,  # Seconds to wait between simulation runs
 
     # -----------------------------------------------------------------------------
@@ -38,16 +38,16 @@ CONFIG = {
     # -----------------------------------------------------------------------------
     # Ego vehicle spawn
     'EGO_SPAWN_TRANSFORM': carla.Transform(
-        carla.Location(x=84, y=-0.0, z=2),
+        carla.Location(x=84, y=0.1, z=2),
         carla.Rotation(yaw=180)
     ),
     # Obstacles spawns
     'OBSTACLES_SPAWNS_TRANSFORMS': [
         carla.Transform(
-            carla.Location(x=86, y=-2.8, z=2),
+            carla.Location(x=86, y=-2.7, z=2),
             carla.Rotation(yaw=180)),
         carla.Transform(
-            carla.Location(x=96, y=-2.8, z=2),
+            carla.Location(x=96, y=-2.7, z=2),
             carla.Rotation(yaw=180))
     ],
     # Spectator camera transform
@@ -60,7 +60,7 @@ CONFIG = {
     # LiDAR Sensor Transforms
     # -----------------------------------------------------------------------------
     'LIDAR_TRANSFORM': carla.Transform(
-        carla.Location(x=-1.75, y=0.9, z=0.75),
+        carla.Location(x=-1.70, y=0.9, z=0.75),
         carla.Rotation(pitch=0.0, yaw=0.0, roll=0.0)
     ),
 
@@ -78,23 +78,33 @@ CONFIG = {
     # -----------------------------------------------------------------------------
 
     'OBSTACLE_FRONT_RIGHT_TRANSFORM': carla.Transform(
-        carla.Location(x=1.85, y=0.75, z=0.8),
+        carla.Location(x=1.85, y=0.75, z=0.75),
+        carla.Rotation(pitch=0.0, yaw=5.0, roll=0.0)
+    ),
+    'OBSTACLE_FRONT_CENTER_TRANSFORM': carla.Transform(
+        carla.Location(x=1.85, y=0.0, z=0.75),
         carla.Rotation(pitch=0.0, yaw=5.0, roll=0.0)
     ),
     'OBSTACLE_FRONT_LEFT_TRANSFORM': carla.Transform(
-        carla.Location(x=1.85, y=-0.75, z=0.8),
+        carla.Location(x=1.85, y=-0.75, z=0.75),
         carla.Rotation(pitch=0.0, yaw=5.0, roll=0.0)
     ),
+
     'OBSTACLE_REAR_RIGHT_TRANSFORM': carla.Transform(
-        carla.Location(x=-1.85, y=0.75, z=0.8),
+        carla.Location(x=-1.95, y=0.85, z=0.75),
+        carla.Rotation(pitch=0.0, yaw=-180.0, roll=0.0)
+    ),
+    'OBSTACLE_REAR_CENTER_TRANSFORM': carla.Transform(
+        carla.Location(x=-1.95, y=0.0, z=0.75),
         carla.Rotation(pitch=0.0, yaw=-180.0, roll=0.0)
     ),
     'OBSTACLE_REAR_LEFT_TRANSFORM': carla.Transform(
-        carla.Location(x=-1.85, y=-0.75, z=0.8),
+        carla.Location(x=-1.95, y=-0.85, z=0.75),
         carla.Rotation(pitch=0.0, yaw=-180.0, roll=0.0)
     ),
 
-    'OBSTACLE_MIN_DISTANCE': 0.15,
+
+    'OBSTACLE_MIN_DISTANCE': 0.2,
     'OBSTACLE_DETECTION_DISTANCE': 5.0,
     'OBSTACLE_HIT_RADIUS': 0.4,
     'OBSTACLE_ONLY_DYNAMICS': False,
@@ -107,7 +117,7 @@ CONFIG = {
 
     'PARKING_ALIGN_BEGIN_STEERING_DIST': 1.1,
     'PARKING_FORWARD_LENGTH': 0.9,
-    'PARKING_FORWARD_MIN_DIST': 1.0,
+    'PARKING_FORWARD_MIN_DIST': 0.7,
 
     # -----------------------------------------------------------------------------
     # Vehicle Dynamics

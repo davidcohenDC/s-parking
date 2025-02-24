@@ -34,9 +34,7 @@ class VehicleController:
         :return: The VehicleControl command that was applied.
         """
         control = carla.VehicleControl(throttle=throttle, steer=steer, reverse=reverse, brake=brake)
-        logging.debug(
-            f"Drive command: throttle={throttle}, steer={steer}, reverse={reverse}, brake={brake}"
-        )
+
         self.vehicle.apply_control(control)
         return control
 
@@ -52,7 +50,7 @@ class VehicleController:
         """
         if throttle is None:
             throttle = self.reverse_throttle
-        logging.debug(f"Reverse straight command executed with throttle={throttle}")
+
         return self.drive(throttle=throttle, steer=0.0, reverse=True)
 
     def reverse_steer_right(self, throttle: Optional[float] = None, steer: Optional[float] = None) -> None:
@@ -67,7 +65,7 @@ class VehicleController:
         if steer is None:
             steer = self.steer_angle_in
         self.drive(throttle=throttle, steer=steer, reverse=True)
-        logging.debug(f"Reverse steer right command executed with throttle={throttle}, steer={steer}")
+
 
     def counter_steer(self, throttle: Optional[float] = None, steer: Optional[float] = None) -> None:
         """
@@ -81,7 +79,7 @@ class VehicleController:
         if steer is None:
             steer = self.steer_angle_out
         self.drive(throttle=throttle, steer=steer, reverse=True)
-        logging.info(f"Counter steer command executed with throttle={throttle}, steer={steer}")
+
 
     def forward_straight(self, throttle: Optional[float] = None) -> None:
         """
@@ -93,11 +91,11 @@ class VehicleController:
         if throttle is None:
             throttle = self.forward_throttle
         self.drive(throttle=throttle, steer=0.0, reverse=False)
-        logging.info(f"Forward straight command executed with throttle={throttle}")
+
 
     def stop(self) -> None:
         """
         Stop the vehicle immediately.
         """
         self.drive(throttle=0.0, steer=0.0, reverse=False, brake=1.0)
-        logging.info("Stop command executed. Vehicle stopped.")
+

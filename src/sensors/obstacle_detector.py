@@ -99,7 +99,7 @@ class ObstacleDetector:
         # Use a configurable ratio to filter out potential outliers.
         # For example, if OBSTACLE_OUTLIER_RATIO=0.8 then events with a distance less than
         # 0.8 * median_distance will be considered outliers.
-        outlier_ratio = self.config.get('OBSTACLE_OUTLIER_RATIO', 0.8)
+        outlier_ratio = self.config.get('OBSTACLE_OUTLIER_RATIO', 0.1)
         filtered_events = [e for e in history_list if e['distance'] >= median_distance * outlier_ratio]
 
         # If filtering removed all events (unlikely), fall back to using the full history.
