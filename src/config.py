@@ -21,7 +21,7 @@ CONFIG = {
     # Simulation Timing
     # -----------------------------------------------------------------------------
     'SIMULATION_NUM_RUNS': 2,          # Number of simulation runs
-    'SIMULATION_NUM_STEPS': 90000,     # Number of update steps per simulation run
+    'SIMULATION_NUM_STEPS': 950000,     # Number of update steps per simulation run
     'SIMULATION_WAIT_BETWEEN_RUNS': 1,  # Seconds to wait between simulation runs
 
     # -----------------------------------------------------------------------------
@@ -31,7 +31,6 @@ CONFIG = {
         'map_name': 'Town01_Opt',
         'map_layers': carla.MapLayer.Walls
     },
-    'FPS': 20,
 
     # -----------------------------------------------------------------------------
     # Spawn Transforms
@@ -60,7 +59,7 @@ CONFIG = {
     # LiDAR Sensor Transforms
     # -----------------------------------------------------------------------------
     'LIDAR_TRANSFORM': carla.Transform(
-        carla.Location(x=-1.70, y=0.9, z=0.75),
+        carla.Location(x=-1.8, y=0.9, z=0.75),
         carla.Rotation(pitch=0.0, yaw=0.0, roll=0.0)
     ),
 
@@ -91,25 +90,26 @@ CONFIG = {
     ),
 
     'OBSTACLE_REAR_RIGHT_TRANSFORM': carla.Transform(
-        carla.Location(x=-1.95, y=0.85, z=0.75),
+        carla.Location(x=-2.0, y=0.85, z=0.75),
         carla.Rotation(pitch=0.0, yaw=-180.0, roll=0.0)
     ),
     'OBSTACLE_REAR_CENTER_TRANSFORM': carla.Transform(
-        carla.Location(x=-1.95, y=0.0, z=0.75),
+        carla.Location(x=-2.0, y=0.0, z=0.75),
         carla.Rotation(pitch=0.0, yaw=-180.0, roll=0.0)
     ),
     'OBSTACLE_REAR_LEFT_TRANSFORM': carla.Transform(
-        carla.Location(x=-1.95, y=-0.85, z=0.75),
+        carla.Location(x=-2.0, y=-0.85, z=0.75),
         carla.Rotation(pitch=0.0, yaw=-180.0, roll=0.0)
     ),
-
 
     'OBSTACLE_MIN_DISTANCE': 0.2,
     'OBSTACLE_DETECTION_DISTANCE': 5.0,
     'OBSTACLE_HIT_RADIUS': 0.4,
     'OBSTACLE_ONLY_DYNAMICS': False,
-    'OBSTACLE_SENSOR_TICK': 0.0,
-    'OBSTACLE_MAX_HISTORY': 4000,
+    'OBSTACLE_SENSOR_TICK': 0.01,
+    'OBSTACLE_MAX_HISTORY': 100,
+    'OBSTACLE_NUM_FPS_CHECK': 10,
+    'OBSTACLE_OUTLIER_RATIO': 0.1,
 
     # -----------------------------------------------------------------------------
     # Parking Alignment Thresholds

@@ -3,7 +3,7 @@ import logging
 
 from config import CONFIG
 from scenario import SParkingScenario
-from controller.controller import ParkingController
+from controller.parking_controller import ParkingController
 
 
 def run_simulation_run(sim_index: int, scenario: SParkingScenario, config: dict) -> None:
@@ -26,10 +26,10 @@ def run_simulation_run(sim_index: int, scenario: SParkingScenario, config: dict)
         return
 
     controller = ParkingController(
-        ego_vehicle=ego_vehicle,
-        lidar_sensor=scenario.lidar_sensor,
-        obstacle_detectors=scenario.obstacle_detectors,
-        config=config
+        ego_vehicle,
+        scenario.lidar_sensor,
+        scenario.obstacle_detectors,
+        config
     )
 
     # Run simulation steps
@@ -44,9 +44,9 @@ def run_simulation_run(sim_index: int, scenario: SParkingScenario, config: dict)
 
 def main() -> None:
     # Initialize logging
-    logging.basicConfig(level=logging.INFO, format='[%(levelname)s] %(message)s')
+    logging.basicConfig(level=logging.DEBUG, format='[%(levelname)s] %(message)s')
 
-    parking_gaps = [1, 0, -1, -2, -3]  # Fixed values to test
+    parking_gaps = [0, -1,-2,-3, -4]  # Fixed values to test
     num_runs = CONFIG.get('SIMULATION_NUM_RUNS', 1)  # Number of runs per gap
 
     # Create the scenario once and reuse it
@@ -58,7 +58,7 @@ def main() -> None:
     spectator.set_transform(CONFIG['SPECTATOR_TRANSFORM'])
 
     for offset in parking_gaps:
-        for sim_index in range(num_runs):  # Repeat for each simulation run
+        for sim_index in range(1):  # Repeat for each simulation run
             logging.info(f"[Simulation] Run {sim_index + 1}/{num_runs} with back car moved by {offset:.2f} meters")
             scenario.reset_obstacle_positions()
 
