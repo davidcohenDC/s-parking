@@ -68,7 +68,6 @@ class SParkingScenario:
         """
         self._spawn_ego_and_obstacles()
         self._spawn_lidar_sensor()
-        self._spawn_collision_sensor()
         self._spawn_obstacle_detector()
         self._wait_for_vehicles_stopped()
 
@@ -175,42 +174,6 @@ class SParkingScenario:
             self.actor_list.append(self.lidar_sensor.sensor_actor)
             logging.info("[SParkingScenario] LiDAR sensor spawned and attached.")
 
-    def move_obstacle(self, offset: float) -> None:
-        """
-        Moves the back obstacle to a new position instead of respawning it.
-        """
-        logging.info("[SParkingScenario] Moving back car instead of respawning...")
-
-        if len(self.obstacles_spawns) > 1:
-            back_car = None
-
-            # Find the obstacle in the current actors list
-            for actor in self.world.get_actors():
-                if "vehicle." in actor.type_id and actor != self.get_ego_vehicle():
-                    back_car = actor
-                    break
-
-            if back_car:
-                # Disable physics to force teleportation
-                back_car.set_simulate_physics(False)
-
-                # Get the original transform and apply the new offset
-                new_transform = back_car.get_transform()
-                new_transform.location.x += offset
-
-                # Apply the new position
-                back_car.set_transform(new_transform)
-
-                # Re-enable physics
-                time.sleep(0.5)  # Allow some processing time before enabling physics again
-                back_car.set_simulate_physics(True)
-
-                logging.info(f"[SParkingScenario] Back car moved by {offset:.2f} meters to {new_transform.location}.")
-            else:
-                logging.warning("[SParkingScenario] No back car found to move!")
-
-        # Wait for CARLA to process the teleportation
-        time.sleep(1)
 
     def _spawn_collision_sensor(self) -> None:
         """Spawn and attach a collision sensor to the ego vehicle."""

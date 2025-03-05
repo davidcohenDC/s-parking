@@ -4,6 +4,7 @@ import carla
 import logging
 from typing import Optional, Dict, Any, List
 
+from src.sensors.lidar_sensor import LidarSensorManager
 from src.sensors.obstacle_detector import ObstacleDetector
 from src.utils.distance import euclid_dist
 from src.controller.vehicle_controller import VehicleController
@@ -14,7 +15,7 @@ from src.parking_config import ParkingConfig
 
 
 class ParkingController(ParkingControllerInterface):
-    def __init__(self, ego_vehicle: carla.Vehicle, lidar, obstacle_detectors: List[ObstacleDetector],
+    def __init__(self, ego_vehicle: carla.Vehicle, lidar: LidarSensorManager, obstacle_detectors: List[ObstacleDetector],
                  config: Dict[str, Any]):
         self._ego_vehicle = ego_vehicle
         self._lidar = lidar
